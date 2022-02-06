@@ -36,7 +36,7 @@ async function getStyleIdsWithName() {
       const style = figma.getStyleById(styleId);
       return style
         ? {
-            name: style.name,
+            name: style.name.toLowerCase(),
             data: styleId,
           }
         : null;
@@ -88,10 +88,10 @@ async function runPlugin() {
     async ({ parameters, key, query, result }: ParameterInputEvent) => {  
       switch (key) {
         case "old-style":    
-          result.setSuggestions(ids.filter((s) => s.name.includes(query)));
+          result.setSuggestions(ids.filter((s) => s.name.includes(query.toLowerCase())));
           break;
         case "new-style":
-          result.setSuggestions(ids.filter((s) => s.name.includes(query)));
+          result.setSuggestions(ids.filter((s) => s.name.includes(query.toLowerCase())));
           break;
         default:
           return;
