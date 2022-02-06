@@ -1,0 +1,19 @@
+{
+  "name": "Style Swap",
+  "id": "1067092321907268578",
+  "api": "1.0.0",
+  "main": "code.js",
+  "editorType": [
+    "figma"
+  ],
+  "parameters": [
+    {
+      "name": "Old style name",
+      "key": "old-style"
+    },
+    {
+      "name": "New style name",
+      "key": "new-style"
+    }
+]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "style-swap",
+  "version": "1.0.0",
+  "description": "A figma plugin to swap styles",
+  "main": "code.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -p tsconfig.json --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/six7/style-swap.git"
+  },
+  "author": "Jan Six",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/six7/style-swap/issues"
+  },
+  "homepage": "https://github.com/six7/style-swap#readme",
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.42.1"
+  }
+}
