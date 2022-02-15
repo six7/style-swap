@@ -1,5 +1,9 @@
+figma.showUI(__html__);
 figma.skipInvisibleInstanceChildren = true;
 
+// declarations
+let nodesChanged = 0;
+let uniqueStyleIds = [];
 const allTextNodes = figma.root.findAllWithCriteria({
   types: ["TEXT"],
 });
@@ -53,35 +57,39 @@ async function convertOldToNewStyle(
   if (typeof node.textStyleId === "symbol") {
     node.getStyledTextSegments(["textStyleId"]).forEach((segment) => {
       if (segment.textStyleId === oldStyleId) {
+        nodesChanged += 1;
         return node.setRangeTextStyleId(segment.start, segment.end, newStyleId);
       }
     });
   } else if (node.textStyleId === oldStyleId) {
+    nodesChanged += 1;
     return (node.textStyleId = newStyleId);
+  } else if (typeof node.textStyleId === "string" && figma.getStyleById(node.textStyleId)) {
+    const oldStyleName = figma.getStyleById(node.textStyleId)?.name.toLowerCase();;
+
+    if (oldStyleName === oldStyleId) {
+      const correspondingNewStyleId: any = uniqueStyleIds.filter((s) => s.name.toLowerCase() === newStyleId.toLowerCase());
+      if (correspondingNewStyleId[0].data) {
+        nodesChanged += 1;
+        return (node.textStyleId = correspondingNewStyleId[0].data);
+      }
+    }
   }
 }
 
 async function startPluginWithParameters(parameters: ParameterValues) {
   if (!parameters["old-style"] || !parameters["new-style"]) {
-    figma.notify(
-      "One of the parameters was not correctly specified. Please try again."
-    );
-    figma.closePlugin();
+    figma.notify("One of the parameters was not correctly specified. Please try again.");
   }
   await allTextNodes.forEach((node) =>
     convertOldToNewStyle(node, parameters["old-style"], parameters["new-style"])
   );
+  figma.notify(`Styles swap done successfully and No. of nodes changed are ${nodesChanged}`);
   figma.closePlugin();
 }
 
-figma.on("run", async ({ command, parameters }: RunEvent) => {
-  if (parameters) {
-    await startPluginWithParameters(parameters);
-  }
-});
-
 async function runPlugin() {
-  const ids = await getStyleIdsWithName();
+  const ids = uniqueStyleIds = await getStyleIdsWithName();
 
   figma.parameters.on(
     "input",
@@ -98,7 +106,33 @@ async function runPlugin() {
       }
     }
   );
+}
 
+figma.ui.onmessage = (msg) => {
+  if (msg.type === "check-and-update") {
+    if (IsJsonString(msg.json)) {
+      const obj = JSON.parse(msg.json);
+      
+      for (let eachStyle in obj) {
+        startPluginWithParameters({
+          "old-style": eachStyle,
+          "new-style": obj[eachStyle],
+        });
+     }
+    } else {
+      figma.notify("Wrong format. Please try again");
+    }    
+  }
+};
+
+// to validate the input
+function IsJsonString(str) {
+  try {
+      JSON.parse(str);
+  } catch (e) {
+      return false;
+  }
+  return true;
 }
 
 runPlugin();

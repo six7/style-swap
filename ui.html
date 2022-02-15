@@ -1,0 +1,18 @@
+<h2>Style Swap</h2>
+
+<p>Enter Json:
+  <textarea id="inputObject" rows="4" cols="50">
+  Add a JSON object and click on the below button to see the changes
+  </textarea>
+</p>
+
+<button id="update">update styles</button>
+
+
+<script>
+  document.getElementById('update').onclick = () => {
+    const textbox = document.getElementById('inputObject');
+    const json = textbox.value;
+    parent.postMessage({ pluginMessage: { type: 'check-and-update', json } }, '*')
+  }
+</script>
