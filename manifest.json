@@ -4,5 +4,15 @@
   "api": "1.0.0",
   "main": "code.js",
   "editorType": ["figma"],
-  "ui": "ui.html"
+  "ui": "ui.html",
+  "parameters": [
+    {
+      "name": "Old style name",
+      "key": "old-style"
+    },
+    {
+      "name": "New style name",
+      "key": "new-style"
+    }
+]
 }
