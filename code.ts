@@ -67,24 +67,17 @@ async function convertOldToNewStyle(parameters: ParameterValues) {
 }
 
 async function startPluginWithParameters(parameters: ParameterValues) {
-  let newParameters: any = parameters;
-
-  // conditional check to know which mode the plugin is running in. It can be one of the 2 modes
-  // 1. parameter mode
-  // 2. UI mode (here is where we get input from user)
-  // If false, it means it is running in parameter mode.
-  if (!Array.isArray(parameters)) {
-    newParameters[parameters["old-style"]] = parameters["new-style"];
-  }
-
-  const numberOfNodesUpdated = await convertOldToNewStyle(newParameters);
+  const numberOfNodesUpdated = await convertOldToNewStyle(parameters);
   figma.notify(`Styles swap done successfully and No. of nodes changed are ${numberOfNodesUpdated}`);
   figma.closePlugin();
 }
 
 figma.on("run", async ({ command, parameters }: RunEvent) => {
   if (parameters) {
-    await startPluginWithParameters(parameters);
+    const mappedParameters = {};
+    mappedParameters[parameters["old-style"]] = parameters["new-style"];
+
+    await startPluginWithParameters(mappedParameters);
   }
 });
 
@@ -109,13 +102,12 @@ figma.ui.onmessage = (msg) => {
   if (msg.type === "check-and-update") {
     if (IsJsonString(msg.json)) {
       const inputObject: ParameterValues = JSON.parse(msg.json);
+      const mappedObject = {};
 
       const mappedUniqueStyleIds: ParameterValues = {};
       uniqueStyleIds.forEach((id: any) => {
         mappedUniqueStyleIds[id.name] = id.data;
       });
-
-      const mappedObject = {};
 
       for (const name in inputObject) {
         const oldStyleId = mappedUniqueStyleIds[name];
