@@ -16,6 +16,8 @@ function showUI() {
 
 async function getStyleIdsWithName() {
   const uniqueStyleIds = [];
+  const localStyles = await figma.getLocalTextStyles();
+  uniqueStyleIds.push(...localStyles.map(style => style.id));
 
   for (var i = 0; i < allTextNodes.length; i++) {
     // sleep every 500 items to avoid figma freezing
@@ -73,7 +75,6 @@ async function convertOldToNewStyle(parameters: ParameterValues) {
 
 async function startPluginWithParameters(parameters: ParameterValues) {
   const numberOfNodesUpdated = await convertOldToNewStyle(parameters);
-  console.log("STARTED", numberOfNodesUpdated, numberOfNotFoundStyleIds)
   if (numberOfNotFoundStyleIds === 0 && numberOfNodesUpdated > 0) {
     figma.notify(`Updated ${numberOfNodesUpdated} nodes`);
   } else if (numberOfNotFoundStyleIds === 0 && numberOfNodesUpdated === 0) {
@@ -116,10 +117,8 @@ async function runPlugin() {
 
 figma.ui.onmessage = (msg) => {
   numberOfNotFoundStyleIds = 0;
-  console.log("Message", msg)
   if (msg.type === "check-and-update") {
     if (IsJsonString(msg.json)) {
-      console.log("IS json")
       const inputObject: ParameterValues = JSON.parse(msg.json);
       const mappedObject = {};
 
