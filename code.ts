@@ -1,4 +1,3 @@
-figma.showUI(__html__, { visible: false, width: 600, height: 400 });
 figma.skipInvisibleInstanceChildren = true;
 
 // declarations
@@ -7,7 +6,13 @@ const allTextNodes = figma.root.findAllWithCriteria({
   types: ["TEXT"],
 });
 
+let numberOfNotFoundStyleIds = 0;
+
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+
+function showUI() {
+  figma.showUI(__html__, { width: 600, height: 300 });
+}
 
 async function getStyleIdsWithName() {
   const uniqueStyleIds = [];
@@ -36,7 +41,7 @@ async function getStyleIdsWithName() {
       const style = figma.getStyleById(styleId);
       return style
         ? {
-            name: style.name.toLowerCase(),
+            name: style.name,
             data: styleId,
           }
         : null;
@@ -68,8 +73,16 @@ async function convertOldToNewStyle(parameters: ParameterValues) {
 
 async function startPluginWithParameters(parameters: ParameterValues) {
   const numberOfNodesUpdated = await convertOldToNewStyle(parameters);
-  figma.notify(`Styles swap done successfully and No. of nodes changed are ${numberOfNodesUpdated}`);
-  figma.closePlugin();
+  console.log("STARTED", numberOfNodesUpdated, numberOfNotFoundStyleIds)
+  if (numberOfNotFoundStyleIds === 0 && numberOfNodesUpdated > 0) {
+    figma.notify(`Updated ${numberOfNodesUpdated} nodes`);
+  } else if (numberOfNotFoundStyleIds === 0 && numberOfNodesUpdated === 0) {
+    figma.notify(`No matching styles found, make sure all styles are being used in this document`);
+  } else if (numberOfNotFoundStyleIds > 0 && numberOfNodesUpdated === 0) {
+    figma.notify(`${numberOfNotFoundStyleIds} styles not found`);
+  } else {
+    figma.notify(`Updated ${numberOfNodesUpdated} nodes, ${numberOfNotFoundStyleIds} styles not found`);
+  }
 }
 
 figma.on("run", async ({ command, parameters }: RunEvent) => {
@@ -78,6 +91,9 @@ figma.on("run", async ({ command, parameters }: RunEvent) => {
     mappedParameters[parameters["old-style"]] = parameters["new-style"];
 
     await startPluginWithParameters(mappedParameters);
+    figma.closePlugin();
+  } else {
+    showUI();
   }
 });
 
@@ -87,10 +103,10 @@ async function runPlugin() {
   figma.parameters.on("input", async ({ parameters, key, query, result }: ParameterInputEvent) => {
     switch (key) {
       case "old-style":
-        result.setSuggestions(ids.filter((s) => s.name.includes(query.toLowerCase())));
+        result.setSuggestions(ids.filter((s) => s.name.toLowerCase().includes(query.toLowerCase())));
         break;
       case "new-style":
-        result.setSuggestions(ids.filter((s) => s.name.includes(query.toLowerCase())));
+        result.setSuggestions(ids.filter((s) => s.name.toLowerCase().includes(query.toLowerCase())));
         break;
       default:
         return;
@@ -99,8 +115,11 @@ async function runPlugin() {
 }
 
 figma.ui.onmessage = (msg) => {
+  numberOfNotFoundStyleIds = 0;
+  console.log("Message", msg)
   if (msg.type === "check-and-update") {
     if (IsJsonString(msg.json)) {
+      console.log("IS json")
       const inputObject: ParameterValues = JSON.parse(msg.json);
       const mappedObject = {};
 
@@ -116,27 +135,20 @@ figma.ui.onmessage = (msg) => {
         // check if the styles exist or not, if not notify the user
         if (oldStyleId && newStyleId) {
           mappedObject[oldStyleId] = newStyleId;
+        } else {
+          numberOfNotFoundStyleIds += 1;
         }
       }
 
       startPluginWithParameters(mappedObject);
-    } else {
-      notifyUserAndClosePlugin();
     }
+  } else {
+    figma.closePlugin();
   }
-
-  // Make sure to close the plugin when you're done. Otherwise the plugin will
-  // keep running, which shows the cancel button at the bottom of the screen.
-  figma.closePlugin();
 };
 
 // <--  helper functions -->
 
-// notify the user about the invalid parameters he/she entered and close the plugin
-function notifyUserAndClosePlugin() {
-  figma.notify("One of the parameters was not correctly specified. Please try again.");
-  figma.closePlugin();
-}
 
 // To validate the input whether its a valid JSON are not
 function IsJsonString(str) {
