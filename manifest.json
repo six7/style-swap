@@ -5,6 +5,7 @@
   "main": "code.js",
   "editorType": ["figma"],
   "ui": "ui.html",
+  "parameterOnly": false,
   "parameters": [
     {
       "name": "Old style name",
